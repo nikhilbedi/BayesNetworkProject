@@ -50,6 +50,7 @@
 #			It enables a O(1) lookup time to determine probability of (w=# given Spam)
 
 import os
+import sys
 import wordprobability
 
 ''' 
@@ -75,6 +76,15 @@ Fills a dictionary by analyzing files for specific words,
 and marking their word count.
 '''
 def createEmailDictionary(words, dictionary, folderName):
+	# Set up progress bar
+	numFiles = len(os.listdir(folderName))
+	steps = numFiles / 10
+	i = 0
+	print "Beginning: [          ]",
+	print '\b'*12,
+	sys.stdout.flush()
+
+	# create dictionary
 	for filename in os.listdir(folderName):
 		wordsInEmail = []
 		f = file(folderName + filename).read()
@@ -87,14 +97,28 @@ def createEmailDictionary(words, dictionary, folderName):
 				wordsInEmail.append({word.lower() : count})
 		dictionary[filename] = wordsInEmail
 
+		# Print progress bar
+		i = i+1
+		if i%steps == 0:
+			print '\b.',
+			sys.stdout.flush()
+		percent = i / numFiles
+
+	# Finish
+	print "\b] Done!"
+		
+
 ## Changing current working directory to data/
 print os.getcwd()
-print "Changing current working directory to \'data\'"
+print "\nChanging current working directory to \'data\'\n"
 os.chdir("data/")
 print os.getcwd()
 
+
 words = createWordsList()
+print "Creating list of word counts for spam emails..."
 spamEmails = {}
 createEmailDictionary(words, spamEmails, "train/spam/")
+print "Creating list of word counts for ham emails..."
 hamEmails = {}
 createEmailDictionary(words, hamEmails, "train/ham/")
