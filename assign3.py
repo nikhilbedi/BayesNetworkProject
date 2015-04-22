@@ -26,7 +26,7 @@
 #	Word Probability given Spam (Word-Ham Probability created similarly):
 
 #		- How is it created?
-#			list zero; list one; list two; list lots;	// string as key, int as value
+#			dict zero; dict one; dict two; dict lots;	// string as key, int as value
 #			For each email in Spam email dictionary
 #				For each word in dict.txt 
 #					if word is in email
@@ -45,6 +45,7 @@
 #				oneProbability 	= one[word] / SpamEmailDictionary.size
 #				twoProbability 	= two[word] / SpamEmailDictionary.size
 #				lotsProbability = lots[word] / SpamEmailDictionary.size
+#				wordSpamProbability[word] = WordProbability (the four calculated values)
 
 #		- How is it useful?
 #			It enables a O(1) lookup time to determine probability of (w=# given Spam)
@@ -75,7 +76,7 @@ def createWordsList():
 Fills a dictionary by analyzing files for specific words,
 and marking their word count.
 '''
-def createEmailDictionary(words, dictionary, folderName):
+def createEmailDictionary(words, folderName):
 	# Set up progress bar
 	numFiles = len(os.listdir(folderName))
 	steps = numFiles / 10
@@ -85,6 +86,7 @@ def createEmailDictionary(words, dictionary, folderName):
 	sys.stdout.flush()
 
 	# create dictionary
+	dictionary = {}
 	for filename in os.listdir(folderName):
 		wordsInEmail = []
 		f = file(folderName + filename).read()
@@ -94,7 +96,7 @@ def createEmailDictionary(words, dictionary, folderName):
 				if word.lower() == emailWord.lower():
 					count = count + 1
 			if count != 0:
-				wordsInEmail.append({word.lower() : count})
+				wordsInEmail.append((word.lower(), count))
 		dictionary[filename] = wordsInEmail
 
 		# Print progress bar
@@ -106,7 +108,65 @@ def createEmailDictionary(words, dictionary, folderName):
 
 	# Finish
 	print "\b] Done!"
+	return dictionary
 		
+'''
+Creates a dictionary filled with words as keys, and amounts as values.
+a WordProbability object is provided to modulate.
+'''
+def createProbabilityDictionary(words, dictionary):
+	zero = {}
+	one = {}
+	two = {}
+	lots = {}
+	for email in dictionary:
+		for word in words:
+			l = dictionary[email]
+			count = 0
+			for x in l:
+				if word == x[0]:
+					count = x[1]
+					break
+			if count == 0:
+				if word in zero:
+					zero[word] = zero[word] + 1
+				else:
+					zero[word] = 1
+				continue
+			if count == 1:
+				if word in one:
+					one[word] = one[word] + 1
+				else:
+					one[word] = 1
+			elif count == 2:
+				if word in two:
+					two[word] = two[word] + 1
+				else:
+					two[word] = 1
+			else:
+				if word in lots:
+					lots[word] = lots[word] + 1
+				else:
+					lots[word] = 1
+
+	wordProbability = {}
+	for word in words:
+		zeroProbability = 0.0
+		oneProbability = 0.0
+		twoProbability = 0.0
+		lotsProbability = 0.0
+		if word in zero:
+			zeroProbability = zero[word] / (len(dictionary) + 0.0)
+		if word in one:
+			oneProbability = one[word] / (len(dictionary) + 0.0)
+		if word in two:
+			twoProbability = two[word] / (len(dictionary) + 0.0)
+		if word in lots:
+			lotsProbability = lots[word] / (len(dictionary) + 0.0)
+		wordProbability[word] = wordprobability.make_wordprobability(zeroProbability, oneProbability, twoProbability, lotsProbability)
+	return wordProbability
+
+
 
 ## Changing current working directory to data/
 print os.getcwd()
@@ -116,9 +176,26 @@ print os.getcwd()
 
 
 words = createWordsList()
+
 print "Creating list of word counts for spam emails..."
-spamEmails = {}
-createEmailDictionary(words, spamEmails, "train/spam/")
+spamEmails = createEmailDictionary(words, "train/spam/")
+
 print "Creating list of word counts for ham emails..."
-hamEmails = {}
-createEmailDictionary(words, hamEmails, "train/ham/")
+hamEmails = createEmailDictionary(words, "train/ham/")
+
+spamProbability = len(spamEmails) / (len(spamEmails) + len(hamEmails) + 0.0) # adding 0.0 to make it return a float
+print len(spamEmails)
+print (len(spamEmails) + len(hamEmails))
+print spamProbability
+
+# TODO zero is always 1.0, and everything else is 0.0
+
+wordProbabilityGivenSpam = createProbabilityDictionary(words, spamEmails)
+wordProbabilityGivenHam = createProbabilityDictionary(words, hamEmails)
+
+b = wordProbabilityGivenSpam["relief"] #relief shows up in 7 files
+
+print b.zero
+print b.one
+print b.two
+print b.lots
