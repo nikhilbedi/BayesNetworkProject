@@ -52,6 +52,7 @@
 
 import os
 import sys
+import math
 import wordprobability
 
 ''' 
@@ -166,6 +167,39 @@ def createProbabilityDictionary(words, dictionary):
 		wordProbability[word] = wordprobability.make_wordprobability(zeroProbability, oneProbability, twoProbability, lotsProbability)
 	return wordProbability
 
+'''
+Given a WordProbability dictionary and a list of tuples of their words and counts,
+this function calculates a probability value. 
+'''
+def calculateProbability(words, wordsAndTheirCounts, wordProbability, value):
+	sum = 0.0
+	# for each word 
+		# attempt to obtain tuple if it exists. 
+		# get the corresponding WordProbability object
+		# determine the correct probability to retrieve from the object using the count
+		# sum = sum + log of this probability + value
+	# return sum
+	for word in words:
+		count = 0
+		for x in wordsAndTheirCounts:
+			if word == x[0]:
+				count = x[1]
+				break
+		wordProbabilityObject = wordProbability[word]
+		probability = 0.0
+		if count == 0:
+			probability = wordProbabilityObject.zero
+		elif count == 1:
+			probability = wordProbabilityObject.one
+		elif count == 2:
+			probability = wordProbabilityObject.two
+		else:
+			probability = wordProbabilityObject.lots
+		if probability != 0.0:
+			sum = sum + math.log(probability)
+		else:
+			sum = sum
+	return sum + value
 
 
 ## Changing current working directory to data/
@@ -198,26 +232,95 @@ wordProbabilityGivenHam = createProbabilityDictionary(words, hamEmails)
 # Create email dictionaries for test set and append them
 print "Creating list of word counts for spam emails from the test set..."
 spamEmailsTest = createEmailDictionary(words, "test/spam/")
+'''
 spamEmailsFull = spamEmails.copy()
 spamEmailsFull.update(spamEmailsTest)
 print "Created larger set from training and test spam emails."
 print "Training size: " + str(len(spamEmails))
 print "Test size: " + str(len(spamEmailsTest))
 print "Final size: " + str(len(spamEmailsFull))
+'''
 
 print "Creating list of word counts for ham emails from the test set..."
 hamEmailsTest = createEmailDictionary(words, "test/ham/")
+'''
 hamEmailsFull = hamEmails.copy()
 hamEmailsFull.update(hamEmailsTest)
 print "Created larger set from training and test ham emails."
 print "Training size: " + str(len(hamEmails))
 print "Test size: " + str(len(hamEmailsTest))
 print "Final size: " + str(len(hamEmailsFull))
+'''
 
+
+
+''' TRAINING SET CALCULATIONS '''
+andCount = 0
+predictCount = 0
 # For each indeed spam email, determine the P(Spam|e) and P(Ham|E).  
 	# If P(Spam|e) >= P(Ham|e)
-		# increment spam prediction count
+		# increment spam prediction count (call this predictCount)
+		# increment spam prediction&indeed spam count (call this andCount)
+for email in spamEmails:
+	pSpamGivenE = calculateProbability(words, spamEmails[email], wordProbabilityGivenSpam, math.log(spamProbability))
+	pHamGivenE = calculateProbability(words, spamEmails[email], wordProbabilityGivenHam, math.log(hamProbability))
+	if pSpamGivenE >= pHamGivenE:
+		andCount = andCount + 1
+		predictCount = predictCount + 1
 
 # For each indeed ham email, determine the P(Spam|e) and P(Ham|E).  
 	# If P(Spam|e) >= P(Ham|e)
 		# increment spam prediction count
+for email in hamEmails:
+	pSpamGivenE = calculateProbability(words, hamEmails[email], wordProbabilityGivenSpam, math.log(spamProbability))
+	pHamGivenE = calculateProbability(words, hamEmails[email], wordProbabilityGivenHam, math.log(hamProbability))
+	if pSpamGivenE >= pHamGivenE:
+		predictCount = predictCount + 1
+
+print "Indeed Spam and Predict Spam Count: " + str(andCount)
+print "Predict Spam Count: " + str(predictCount)
+
+# Precision = andCount / predictCount
+precision = andCount / (predictCount + 0.0)
+print "Training Precision: " + str(precision)
+
+# Recall = andCount / # of indeed spam emails
+recall = andCount / (len(spamEmails) + 0.0)
+print "Training Recall: " + str(precision)
+
+
+
+
+''' TEST SET CALCULATIONS '''
+andCount = 0
+predictCount = 0
+# For each indeed spam email, determine the P(Spam|e) and P(Ham|E).  
+	# If P(Spam|e) >= P(Ham|e)
+		# increment spam prediction count (call this predictCount)
+		# increment spam prediction&indeed spam count (call this andCount)
+for email in spamEmailsTest:
+	pSpamGivenE = calculateProbability(words, spamEmailsTest[email], wordProbabilityGivenSpam, math.log(spamProbability))
+	pHamGivenE = calculateProbability(words, spamEmailsTest[email], wordProbabilityGivenHam, math.log(hamProbability))
+	if pSpamGivenE >= pHamGivenE:
+		andCount = andCount + 1
+		predictCount = predictCount + 1
+
+# For each indeed ham email, determine the P(Spam|e) and P(Ham|E).  
+	# If P(Spam|e) >= P(Ham|e)
+		# increment spam prediction count
+for email in hamEmailsTest:
+	pSpamGivenE = calculateProbability(words, hamEmailsTest[email], wordProbabilityGivenSpam, math.log(spamProbability))
+	pHamGivenE = calculateProbability(words, hamEmailsTest[email], wordProbabilityGivenHam, math.log(hamProbability))
+	if pSpamGivenE >= pHamGivenE:
+		predictCount = predictCount + 1
+
+print "Indeed Spam and Predict Spam Count: " + str(andCount)
+print "Predict Spam Count: " + str(predictCount)
+
+# Precision = andCount / predictCount
+precision = andCount / (predictCount + 0.0)
+print "Test Precision: " + str(precision)
+
+# Recall = andCount / # of indeed spam emails
+recall = andCount / (len(spamEmails) + 0.0)
+print "Test Recall: " + str(precision)
