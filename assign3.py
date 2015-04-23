@@ -177,25 +177,47 @@ print os.getcwd()
 
 words = createWordsList()
 
-print "Creating list of word counts for spam emails..."
+print "Creating list of word counts for spam emails from the training set..."
 spamEmails = createEmailDictionary(words, "train/spam/")
 
-print "Creating list of word counts for ham emails..."
+print "Creating list of word counts for ham emails from the training set..."
 hamEmails = createEmailDictionary(words, "train/ham/")
 
 spamProbability = len(spamEmails) / (len(spamEmails) + len(hamEmails) + 0.0) # adding 0.0 to make it return a float
-print len(spamEmails)
-print (len(spamEmails) + len(hamEmails))
-print spamProbability
+print "Probability of an email being spam: " + str(spamProbability)
 
-# TODO zero is always 1.0, and everything else is 0.0
+hamProbability = len(hamEmails) / (len(spamEmails) + len(hamEmails) + 0.0) # adding 0.0 to make it return a float
+print "Probability of an email being ham: " + str(hamProbability)
+
 
 wordProbabilityGivenSpam = createProbabilityDictionary(words, spamEmails)
 wordProbabilityGivenHam = createProbabilityDictionary(words, hamEmails)
 
-b = wordProbabilityGivenSpam["relief"] #relief shows up in 7 files
+# Now determine whether the emails in the training and test set are spam or ham
 
-print b.zero
-print b.one
-print b.two
-print b.lots
+# Create email dictionaries for test set and append them
+print "Creating list of word counts for spam emails from the test set..."
+spamEmailsTest = createEmailDictionary(words, "test/spam/")
+spamEmailsFull = spamEmails.copy()
+spamEmailsFull.update(spamEmailsTest)
+print "Created larger set from training and test spam emails."
+print "Training size: " + str(len(spamEmails))
+print "Test size: " + str(len(spamEmailsTest))
+print "Final size: " + str(len(spamEmailsFull))
+
+print "Creating list of word counts for ham emails from the test set..."
+hamEmailsTest = createEmailDictionary(words, "test/ham/")
+hamEmailsFull = hamEmails.copy()
+hamEmailsFull.update(hamEmailsTest)
+print "Created larger set from training and test ham emails."
+print "Training size: " + str(len(hamEmails))
+print "Test size: " + str(len(hamEmailsTest))
+print "Final size: " + str(len(hamEmailsFull))
+
+# For each indeed spam email, determine the P(Spam|e) and P(Ham|E).  
+	# If P(Spam|e) >= P(Ham|e)
+		# increment spam prediction count
+
+# For each indeed ham email, determine the P(Spam|e) and P(Ham|E).  
+	# If P(Spam|e) >= P(Ham|e)
+		# increment spam prediction count
