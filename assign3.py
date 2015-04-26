@@ -115,11 +115,17 @@ def createEmailDictionary(words, folderName):
 Creates a dictionary filled with words as keys, and amounts as values.
 a WordProbability object is provided to modulate.
 '''
-def createProbabilityDictionary(words, dictionary):
+def createProbabilityDictionary(words, dictionary, filename):
+	file = open(filename, 'w+')
 	zero = {}
 	one = {}
 	two = {}
 	lots = {}
+	for word in words:
+		zero[word] = 0
+		one[word] = 0
+		two[word] = 0
+		lots[word] = 0
 	for email in dictionary:
 		for word in words:
 			l = dictionary[email]
@@ -129,42 +135,27 @@ def createProbabilityDictionary(words, dictionary):
 					count = x[1]
 					break
 			if count == 0:
-				if word in zero:
-					zero[word] = zero[word] + 1
-				else:
-					zero[word] = 1
-				continue
-			if count == 1:
-				if word in one:
-					one[word] = one[word] + 1
-				else:
-					one[word] = 1
+				zero[word] = zero[word] + 1
+			elif count == 1:
+				one[word] = one[word] + 1
 			elif count == 2:
-				if word in two:
-					two[word] = two[word] + 1
-				else:
-					two[word] = 1
+				two[word] = two[word] + 1
 			else:
-				if word in lots:
-					lots[word] = lots[word] + 1
-				else:
-					lots[word] = 1
-
+				lots[word] = lots[word] + 1
 	wordProbability = {}
 	for word in words:
 		zeroProbability = 0.0
 		oneProbability = 0.0
 		twoProbability = 0.0
 		lotsProbability = 0.0
-		if word in zero:
-			zeroProbability = zero[word] / (len(dictionary) + 0.0)
-		if word in one:
-			oneProbability = one[word] / (len(dictionary) + 0.0)
-		if word in two:
-			twoProbability = two[word] / (len(dictionary) + 0.0)
-		if word in lots:
-			lotsProbability = lots[word] / (len(dictionary) + 0.0)
+		zeroProbability = zero[word] / (len(dictionary) + 0.0)
+		oneProbability = one[word] / (len(dictionary) + 0.0)
+		twoProbability = two[word] / (len(dictionary) + 0.0)
+		lotsProbability = lots[word] / (len(dictionary) + 0.0)
 		wordProbability[word] = wordprobability.make_wordprobability(zeroProbability, oneProbability, twoProbability, lotsProbability)
+		file.write(word + "\t" + str(zeroProbability) + "\t" + str(oneProbability) + "\t" + str(twoProbability) + "\t"
+			+ str(lotsProbability) + "\n")
+
 	return wordProbability
 
 '''
@@ -196,7 +187,7 @@ def calculateProbability(words, wordsAndTheirCounts, wordProbability, value):
 		else:
 			probability = wordProbabilityObject.lots
 		if probability != 0.0:
-			sum = sum + math.log(probability)
+			sum = sum + math.log10(probability)
 		else:
 			sum = sum
 	return sum + value
@@ -224,8 +215,8 @@ hamProbability = len(hamEmails) / (len(spamEmails) + len(hamEmails) + 0.0) # add
 print "Probability of an email being ham: " + str(hamProbability)
 
 
-wordProbabilityGivenSpam = createProbabilityDictionary(words, spamEmails)
-wordProbabilityGivenHam = createProbabilityDictionary(words, hamEmails)
+wordProbabilityGivenSpam = createProbabilityDictionary(words, spamEmails, "spam-probability.txt")
+wordProbabilityGivenHam = createProbabilityDictionary(words, hamEmails, "ham-probability.txt")
 
 # Now determine whether the emails in the training and test set are spam or ham
 
@@ -262,8 +253,8 @@ predictCount = 0
 		# increment spam prediction count (call this predictCount)
 		# increment spam prediction&indeed spam count (call this andCount)
 for email in spamEmails:
-	pSpamGivenE = calculateProbability(words, spamEmails[email], wordProbabilityGivenSpam, math.log(spamProbability))
-	pHamGivenE = calculateProbability(words, spamEmails[email], wordProbabilityGivenHam, math.log(hamProbability))
+	pSpamGivenE = calculateProbability(words, spamEmails[email], wordProbabilityGivenSpam, math.log10(spamProbability))
+	pHamGivenE = calculateProbability(words, spamEmails[email], wordProbabilityGivenHam, math.log10(hamProbability))
 	if pSpamGivenE >= pHamGivenE:
 		andCount = andCount + 1
 		predictCount = predictCount + 1
@@ -272,8 +263,8 @@ for email in spamEmails:
 	# If P(Spam|e) >= P(Ham|e)
 		# increment spam prediction count
 for email in hamEmails:
-	pSpamGivenE = calculateProbability(words, hamEmails[email], wordProbabilityGivenSpam, math.log(spamProbability))
-	pHamGivenE = calculateProbability(words, hamEmails[email], wordProbabilityGivenHam, math.log(hamProbability))
+	pSpamGivenE = calculateProbability(words, hamEmails[email], wordProbabilityGivenSpam, math.log10(spamProbability))
+	pHamGivenE = calculateProbability(words, hamEmails[email], wordProbabilityGivenHam, math.log10(hamProbability))
 	if pSpamGivenE >= pHamGivenE:
 		predictCount = predictCount + 1
 
@@ -286,7 +277,7 @@ print "Training Precision: " + str(precision)
 
 # Recall = andCount / # of indeed spam emails
 recall = andCount / (len(spamEmails) + 0.0)
-print "Training Recall: " + str(precision)
+print "Training Recall: " + str(recall)
 
 
 
@@ -299,8 +290,8 @@ predictCount = 0
 		# increment spam prediction count (call this predictCount)
 		# increment spam prediction&indeed spam count (call this andCount)
 for email in spamEmailsTest:
-	pSpamGivenE = calculateProbability(words, spamEmailsTest[email], wordProbabilityGivenSpam, math.log(spamProbability))
-	pHamGivenE = calculateProbability(words, spamEmailsTest[email], wordProbabilityGivenHam, math.log(hamProbability))
+	pSpamGivenE = calculateProbability(words, spamEmailsTest[email], wordProbabilityGivenSpam, math.log10(spamProbability))
+	pHamGivenE = calculateProbability(words, spamEmailsTest[email], wordProbabilityGivenHam, math.log10(hamProbability))
 	if pSpamGivenE >= pHamGivenE:
 		andCount = andCount + 1
 		predictCount = predictCount + 1
@@ -309,8 +300,8 @@ for email in spamEmailsTest:
 	# If P(Spam|e) >= P(Ham|e)
 		# increment spam prediction count
 for email in hamEmailsTest:
-	pSpamGivenE = calculateProbability(words, hamEmailsTest[email], wordProbabilityGivenSpam, math.log(spamProbability))
-	pHamGivenE = calculateProbability(words, hamEmailsTest[email], wordProbabilityGivenHam, math.log(hamProbability))
+	pSpamGivenE = calculateProbability(words, hamEmailsTest[email], wordProbabilityGivenSpam, math.log10(spamProbability))
+	pHamGivenE = calculateProbability(words, hamEmailsTest[email], wordProbabilityGivenHam, math.log10(hamProbability))
 	if pSpamGivenE >= pHamGivenE:
 		predictCount = predictCount + 1
 
@@ -322,5 +313,5 @@ precision = andCount / (predictCount + 0.0)
 print "Test Precision: " + str(precision)
 
 # Recall = andCount / # of indeed spam emails
-recall = andCount / (len(spamEmails) + 0.0)
-print "Test Recall: " + str(precision)
+recall = andCount / (len(spamEmailsTest) + 0.0)
+print "Test Recall: " + str(recall)
