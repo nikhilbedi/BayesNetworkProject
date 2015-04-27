@@ -189,7 +189,7 @@ def calculateProbability(words, wordsAndTheirCounts, wordProbability, value):
 		if probability != 0.0:
 			sum = sum + math.log10(probability)
 		else:
-			sum = sum
+			sum = sum - 10000.0
 	return sum + value
 
 
@@ -223,25 +223,9 @@ wordProbabilityGivenHam = createProbabilityDictionary(words, hamEmails, "ham-pro
 # Create email dictionaries for test set and append them
 print "Creating list of word counts for spam emails from the test set..."
 spamEmailsTest = createEmailDictionary(words, "test/spam/")
-'''
-spamEmailsFull = spamEmails.copy()
-spamEmailsFull.update(spamEmailsTest)
-print "Created larger set from training and test spam emails."
-print "Training size: " + str(len(spamEmails))
-print "Test size: " + str(len(spamEmailsTest))
-print "Final size: " + str(len(spamEmailsFull))
-'''
 
 print "Creating list of word counts for ham emails from the test set..."
 hamEmailsTest = createEmailDictionary(words, "test/ham/")
-'''
-hamEmailsFull = hamEmails.copy()
-hamEmailsFull.update(hamEmailsTest)
-print "Created larger set from training and test ham emails."
-print "Training size: " + str(len(hamEmails))
-print "Test size: " + str(len(hamEmailsTest))
-print "Final size: " + str(len(hamEmailsFull))
-'''
 
 
 
@@ -267,9 +251,6 @@ for email in hamEmails:
 	pHamGivenE = calculateProbability(words, hamEmails[email], wordProbabilityGivenHam, math.log10(hamProbability))
 	if pSpamGivenE >= pHamGivenE:
 		predictCount = predictCount + 1
-
-print "Indeed Spam and Predict Spam Count: " + str(andCount)
-print "Predict Spam Count: " + str(predictCount)
 
 # Precision = andCount / predictCount
 precision = andCount / (predictCount + 0.0)
@@ -304,9 +285,6 @@ for email in hamEmailsTest:
 	pHamGivenE = calculateProbability(words, hamEmailsTest[email], wordProbabilityGivenHam, math.log10(hamProbability))
 	if pSpamGivenE >= pHamGivenE:
 		predictCount = predictCount + 1
-
-print "Indeed Spam and Predict Spam Count: " + str(andCount)
-print "Predict Spam Count: " + str(predictCount)
 
 # Precision = andCount / predictCount
 precision = andCount / (predictCount + 0.0)
